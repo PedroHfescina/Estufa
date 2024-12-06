@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import estufaImage from "../assets/Estufa.jpg";
 import "./Home.scss";
@@ -13,6 +13,11 @@ const Home = () => {
   const [humidity, setHumidity] = useState(0);
   const [fanSpeed, setFanSpeed] = useState(0);
 
+  // Estados temporários para os controles deslizantes
+  const [tempInput, setTempInput] = useState(0);
+  const [humidityInput, setHumidityInput] = useState(0);
+  const [fanSpeedInput, setFanSpeedInput] = useState(0);
+
   // Configurar EventSource para consumir dados em tempo real
   useEffect(() => {
     const eventSource = new EventSource("http://127.0.0.1:5000/events");
@@ -20,6 +25,17 @@ const Home = () => {
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log(data);
+
+      if (data.status === "completed" && data.message === "Process finished!") {
+        window.alert("Processo concluído com sucesso!");
+
+        setTempInput(0);
+
+        setHumidityInput(0);
+
+        setFanSpeedInput(0);
+      }
+        
       setLampState(data.lightStatus ? "on" : "off");
       setTemperature(data.temperature);
       setHumidity(data.humidity);
@@ -38,21 +54,21 @@ const Home = () => {
   }, []);
 
   // Função para enviar atualizações à API
-  const sendUpdate = async (endpoint, value) => {
+  const sendUpdate = async (jsonData) => {
     try {
-      const response = await fetch(`http://127.0.0.1:5000/update/${endpoint}`, {
+      const response = await fetch(`http://127.0.0.1:5000/update`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ [endpoint]: value }),
+        body: jsonData,
       });
 
       if (!response.ok) {
-        console.error(`Erro ao atualizar ${endpoint}.`);
+        console.error(`Erro ao atualizar ${jsonData}.`);
       }
     } catch (error) {
-      console.error(`Erro ao enviar atualização para ${endpoint}:`, error);
+      console.error(`Erro ao enviar atualização para ${jsonData}:`, error);
     }
   };
 
@@ -79,15 +95,15 @@ const Home = () => {
           <div className="info">
             <div className="status-cards">
               <div className="status-card">
-                <label>Temperatura</label>
+                <label>Temperatura (Atual)</label>
                 <span>{temperature}°C</span>
               </div>
               <div className="status-card">
-                <label>Umidade</label>
+                <label>Umidade (Atual)</label>
                 <span>{humidity}%</span>
               </div>
               <div className="status-card">
-                <label>Velocidade Fan</label>
+                <label>Velocidade Fan (Atual)</label>
                 <span>{fanSpeed}%</span>
               </div>
             </div>
@@ -99,14 +115,14 @@ const Home = () => {
                   type="range"
                   min="0"
                   max="50"
-                  value={temperature}
+                  value={tempInput}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
-                    setTemperature(value);
-                    sendUpdate("temperature", value);
+                    setTempInput(value);
+                    sendUpdate(JSON.stringify({ "temperature": value }));
                   }}
                 />
-                <span>{temperature}°C</span>
+                <span>{tempInput}°C</span>
               </div>
               <div className="progress-card">
                 <label>Umidade</label>
@@ -114,14 +130,14 @@ const Home = () => {
                   type="range"
                   min="0"
                   max="100"
-                  value={humidity}
+                  value={humidityInput}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
-                    setHumidity(value);
-                    sendUpdate("humidity", value);
+                    setHumidityInput(value);
+                    sendUpdate(JSON.stringify({ "humidity": value }));
                   }}
                 />
-                <span>{humidity}%</span>
+                <span>{humidityInput}%</span>
               </div>
               <div className="progress-card">
                 <label>Velocidade Fan</label>
@@ -129,14 +145,14 @@ const Home = () => {
                   type="range"
                   min="0"
                   max="100"
-                  value={fanSpeed}
+                  value={fanSpeedInput}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
-                    setFanSpeed(value);
-                    sendUpdate("fanSpeed", value);
+                    setFanSpeedInput(value);
+                    sendUpdate(JSON.stringify({ "fanSpeed": value }));
                   }}
                 />
-                <span>{fanSpeed}%</span>
+                <span>{fanSpeedInput}%</span>
               </div>
             </div>
           </div>
@@ -148,6 +164,7 @@ const Home = () => {
               <li>Temperatura excedeu o limite às 10:00</li>
               <li>Nível de umidade estável.</li>
             </ul>
+            <p>Versão 0.1.0</p>
           </div>
         </div>
         <div className="go-to-dashboard">

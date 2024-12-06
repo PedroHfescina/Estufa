@@ -1,4 +1,5 @@
-import React from "react";
+
+import { useState, useEffect } from "react";
 import "./Dashboard.scss";
 import { Sidebar } from "../components/Sidebar.jsx";
 import {
@@ -23,6 +24,48 @@ const data = [
 ];
 
 const Dashboard = () => {
+  // Estados para os dados
+  const [lampState, setLampState] = useState("Desligada");
+  const [temperature, setTemperature] = useState(0);
+  const [humidity, setHumidity] = useState(0);
+  const [fanSpeed, setFanSpeed] = useState(0);
+
+  const [status, setStatus] = useState("Normal");
+
+  // Configurar EventSource para consumir dados em tempo real
+  useEffect(() => {
+    const eventSource = new EventSource("http://127.0.0.1:5000/events");
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log(data);
+
+      setLampState(data.lightStatus ? "Ligada" : "Desligada");
+      setTemperature(data.temperature);
+      setHumidity(data.humidity);
+      setFanSpeed(data.fanSpeed);
+
+      if (temperature >= 0 && temperature <= 50 &&
+        humidity >= 0 && humidity <= 100 &&
+        fanSpeed >= 0 && fanSpeed <= 100
+      ) {
+        setStatus("Normal");
+      } else {
+        setStatus("Incomum");
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("Erro no EventSource:", error);
+      eventSource.close();
+    };
+
+    // Cleanup
+    return () => {
+      eventSource.close();
+    };
+  }, );
+
   return (
     <>
       <Sidebar />
@@ -68,9 +111,11 @@ const Dashboard = () => {
         <div className="home-overview">
           <div className="current-conditions">
             <h2>Condições Atuais</h2>
-            <p>Temperatura: 22°C</p>
-            <p>Umidade: 55%</p>
-            <p>Status: Normal</p>
+            <p>Temperatura: {temperature}°C</p>
+            <p>Umidade: {humidity}%</p>
+            <p>Velocidade do Fan: {fanSpeed}%</p>
+            <p>Status Luz: {lampState}</p>
+            <p>Status: {status}</p>
           </div>
         </div>
       </section>

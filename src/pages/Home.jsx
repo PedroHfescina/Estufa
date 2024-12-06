@@ -1,109 +1,147 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Importar o hook para navegação
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import estufaImage from "../assets/Estufa.jpg";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-} from "recharts";
 import "./Home.scss";
 import { Sidebar } from "../components/Sidebar.jsx";
 
-const data = [
-  { name: "0", uv: 40, pv: 10 },
-  { name: "04:00", uv: 70, pv: 30 },
-  { name: "08:00", uv: 45, pv: 60 },
-  { name: "12:00", uv: 90, pv: 85 },
-  { name: "16:00", uv: 50, pv: 40 },
-  { name: "20:00", uv: 80, pv: 60 },
-  { name: "00:00", uv: 20, pv: 70 },
-];
-
 const Home = () => {
-  const [fan, setFan] = useState(false);
-  const [heat, setHeat] = useState(false);
-  const [powerOff, setPowerOff] = useState(false);
-  const navigate = useNavigate(); // Hook para navegação
+  const navigate = useNavigate();
+
+  // Estados para os dados
+  const [lampState, setLampState] = useState("off");
+  const [temperature, setTemperature] = useState(0);
+  const [humidity, setHumidity] = useState(0);
+  const [fanSpeed, setFanSpeed] = useState(0);
+
+  // Configurar EventSource para consumir dados em tempo real
+  useEffect(() => {
+    const eventSource = new EventSource("http://127.0.0.1:5000/events");
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log(data);
+      setLampState(data.lightStatus ? "on" : "off");
+      setTemperature(data.temperature);
+      setHumidity(data.humidity);
+      setFanSpeed(data.fanSpeed);
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("Erro no EventSource:", error);
+      eventSource.close();
+    };
+
+    // Cleanup
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
+  // Função para enviar atualizações à API
+  const sendUpdate = async (endpoint, value) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/update/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ [endpoint]: value }),
+      });
+
+      if (!response.ok) {
+        console.error(`Erro ao atualizar ${endpoint}.`);
+      }
+    } catch (error) {
+      console.error(`Erro ao enviar atualização para ${endpoint}:`, error);
+    }
+  };
 
   return (
     <>
       <Sidebar />
       <section className="home-section">
         <div className="text">Home</div>
-
         <p className="intro-text">
           Bem-vindo ao Dashboard da Estufa! Aqui você pode monitorar e controlar
-          aspectos críticos do ambiente da sua estufa. Use os gráficos abaixo
-          para observar tendências de temperatura, ajustar as configurações de
-          ventilação e aquecimento, e manter tudo otimizado para o crescimento
-          saudável das plantas.
+          aspectos críticos do ambiente da sua estufa.
         </p>
-
         <div className="container">
           <div className="estufa">
             <img src={estufaImage} alt="estufa" />
-          </div>
-          <div className="info">
-            <div className="progress-bars">
-              <div className="progress-bar">
-                <label>Temperatura: 70%</label>
-                <progress value="70" max="100"></progress>
-              </div>
-              <div className="progress-bar">
-                <label>Umidade: 50%</label>
-                <progress value="50" max="100"></progress>
+            <div className="lamp-container">
+              <div className="lamp">Lâmpada:</div>
+              <div className={`status-button ${lampState}`}>
+                {lampState === "on" ? "Ligada" : "Desligada"}
               </div>
             </div>
-            <div className="controls">
-              <div className="control-box">
-                <label>Ventilador</label>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={fan}
-                    onChange={() => setFan(!fan)}
-                  />
-                  <span className="slider"></span>
-                </label>
-                <span>{fan ? "Ligado" : "Desligado"}</span>
+          </div>
+
+          <div className="info">
+            <div className="status-cards">
+              <div className="status-card">
+                <label>Temperatura</label>
+                <span>{temperature}°C</span>
               </div>
-              <div className="control-box">
-                <label>Esquentar</label>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={heat}
-                    onChange={() => setHeat(!heat)}
-                  />
-                  <span className="slider"></span>
-                </label>
-                <span>{heat ? "Ligado" : "Desligado"}</span>
+              <div className="status-card">
+                <label>Umidade</label>
+                <span>{humidity}%</span>
               </div>
-              <div className="control-box">
-                <label>Desligar</label>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={powerOff}
-                    onChange={() => setPowerOff(!powerOff)}
-                  />
-                  <span className="slider"></span>
-                </label>
-                <span>{powerOff ? "Ligado" : "Desligado"}</span>
+              <div className="status-card">
+                <label>Velocidade Fan</label>
+                <span>{fanSpeed}%</span>
+              </div>
+            </div>
+
+            <div className="upd">
+              <div className="progress-card">
+                <label>Temperatura</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  value={temperature}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    setTemperature(value);
+                    sendUpdate("temperature", value);
+                  }}
+                />
+                <span>{temperature}°C</span>
+              </div>
+              <div className="progress-card">
+                <label>Umidade</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={humidity}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    setHumidity(value);
+                    sendUpdate("humidity", value);
+                  }}
+                />
+                <span>{humidity}%</span>
+              </div>
+              <div className="progress-card">
+                <label>Velocidade Fan</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={fanSpeed}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    setFanSpeed(value);
+                    sendUpdate("fanSpeed", value);
+                  }}
+                />
+                <span>{fanSpeed}%</span>
               </div>
             </div>
           </div>
         </div>
-
         <div className="home-overview">
-          {/* Alertas Recentes */}
           <div className="alerts">
             <h2>Alertas Recentes</h2>
             <ul>
@@ -112,8 +150,6 @@ const Home = () => {
             </ul>
           </div>
         </div>
-
-        {/* Botão para ir ao Dashboard */}
         <div className="go-to-dashboard">
           <button onClick={() => navigate("/dashboard")}>Ver Gráfico</button>
         </div>

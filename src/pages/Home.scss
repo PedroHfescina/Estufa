@@ -23,115 +23,139 @@ body{
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* Inicio scss do container estufa */
 .estufa {
+  padding: 10px;
   width: 40%;
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .estufa img {
-  width: 80%; 
-  max-width: 300px;
-  border-radius: 8px; 
+  padding: 5px;
+  width: 90%;
+  max-width: 320px;
+  border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
 }
 
+.lamp-container {
+  display: flex; 
+  gap: 7px; 
+  margin: 5px;
+}
 
+.lamp {
+  margin-top: 8px;
+  padding: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  color: black;
+}
+
+.status-button {
+  margin: 20px 0px;
+  padding: 0px 4px; 
+  border-radius: 5px;
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  min-width: 80px; 
+  height: 30px; 
+  line-height: 30px; 
+}
+.status-button.on {
+  background-color: rgb(60, 180, 60); 
+}
+
+.status-button.off {
+  background-color: rgb(245, 58, 58); 
+}
+
+/* Fim scss do container estufa */
+
+
+
+/* Inicio scss do container info */
 .info {
   width: 60%;
-  padding: 15px;
+  padding: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 
-  .progress-bars {
-    margin-bottom: 20px;
-
-    .progress-bar {
-      margin-bottom: 10px;
-
-      label {
-        display: block;
-        margin-bottom: 3px;
-        font-weight: bold;
-      }
-
-      progress {
-        width: 100%;
-        height: 20px;
-      }
-    }
-  }
-
-  .controls {
+  .status-cards {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 20px;
 
-    .control-box {
-      width: 30%;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    .status-card {
+      width: 30%; 
       padding: 10px;
       text-align: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
 
       label {
         display: block;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
         font-weight: bold;
-      }
-
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 42px;
-
-        input {
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
-        .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: #ccc;
-          transition: 0.4s;
-          border-radius: 34px;
-
-          &:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: 0.4s;
-            border-radius: 50%;
-          }
-        }
-
-        input:checked + .slider {
-          background-color: #4caf50;
-        }
-
-        input:checked + .slider:before {
-          transform: translateX(26px);
-        }
+        font-size: 14px;
+        color: #555;
       }
 
       span {
         display: block;
-        margin-top: 10px;
-        font-size: 14px;
+        font-size: 20px;
+        font-weight: bold;
         color: #333;
       }
     }
   }
-}
+
+  .upd {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  
+    .progress-card {
+      display: flex;
+      justify-content: space-between; 
+      align-items: center; 
+      width: 100%;
+      padding: 15px;
+      margin-top: 13px;
+      border-radius: 3px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      
+      label {
+        font-weight: bold;
+        width: 150px; 
+        text-align: left; 
+      }
+  
+      input[type="range"] {
+        width: 100%;
+        max-width: 250px; 
+      }
+  
+      span {
+        margin-top: 5px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+    }
+  }
+  
+  }
+  
+
+
+/* Fim scss do container info */
+
+
+
 
 .home-overview {
   display: flex;

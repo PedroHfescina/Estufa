@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import "./Dashboard.scss";
 import { Sidebar } from "../components/Sidebar.jsx";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,19 +20,18 @@ const Dashboard = () => {
   const [fanSpeed, setFanSpeed] = useState(0);
   const [status, setStatus] = useState("Normal");
 
+
   const fetchChartData = async () => {
     try {
       const response = await fetch("http://127.0.0.1:7766/get_graph_data/");
       const jsonData = await response.json();
 
-      
       const transformedData = jsonData.map((item) => ({
         timestamp: item.timestamp, 
         Temperatura: parseInt(item.temperature), 
         Umidade: parseInt(item.humidity), 
       }));
 
-      
       if (jsonData.length > 0) {
         const latestData = jsonData[0];
         setLampState(latestData.light_status ? "Ligada" : "Desligada");
@@ -40,7 +39,6 @@ const Dashboard = () => {
         setHumidity(parseInt(latestData.humidity));
         setFanSpeed(parseInt(latestData.fan_speed));
 
-        
         if (
           latestData.temperature >= 0 &&
           latestData.temperature <= 50 &&
@@ -61,7 +59,6 @@ const Dashboard = () => {
     }
   };
 
-  
   useEffect(() => {
     fetchChartData();
   }, []);
@@ -75,7 +72,7 @@ const Dashboard = () => {
         <div className="container4">
           <div className="dashboardBar">
             <ResponsiveContainer width="80%" height={450}>
-              <LineChart
+              <BarChart
                 data={chartData} 
                 margin={{
                   top: 5,
@@ -103,9 +100,9 @@ const Dashboard = () => {
                 />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="Umidade" stroke="#2196F3" />
-                <Line type="monotone" dataKey="Temperatura" stroke="#F44336" />
-              </LineChart>
+                <Bar dataKey="Temperatura" fill="#F44336" name="Temperatura" />
+                <Bar dataKey="Umidade" fill="#2196F3" name="Umidade" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

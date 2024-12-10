@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import "./Dashboard.scss";
 import { Sidebar } from "../components/Sidebar.jsx";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -13,58 +12,59 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { name: "0", Umidade: 40, Temperatura: 10 },
-  { name: "04:00", Umidade: 70, Temperatura: 30 },
-  { name: "08:00", Umidade: 74, Temperatura: 44 },
-  { name: "12:00", Umidade: 90, Temperatura: 85 },
-  { name: "16:00", Umidade: 65, Temperatura: 70 },
-  { name: "20:00", Umidade: 55, Temperatura: 80 },
-  { name: "00:00", Umidade: 35, Temperatura: 87 },
-];
-
 const Dashboard = () => {
-  // Estados para os dados
+  const [chartData, setChartData] = useState([]); 
   const [lampState, setLampState] = useState("Desligada");
   const [temperature, setTemperature] = useState(0);
   const [humidity, setHumidity] = useState(0);
   const [fanSpeed, setFanSpeed] = useState(0);
-
   const [status, setStatus] = useState("Normal");
 
-  // Configurar EventSource para consumir dados em tempo real
-  useEffect(() => {
-    const eventSource = new EventSource("http://127.0.0.1:5000/events");
+  const fetchChartData = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:7766/get_graph_data/");
+      const jsonData = await response.json();
 
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log(data);
+      
+      const transformedData = jsonData.map((item) => ({
+        timestamp: item.timestamp, 
+        Temperatura: parseInt(item.temperature), 
+        Umidade: parseInt(item.humidity), 
+      }));
 
-      setLampState(data.lightStatus ? "Ligada" : "Desligada");
-      setTemperature(data.temperature);
-      setHumidity(data.humidity);
-      setFanSpeed(data.fanSpeed);
+      
+      if (jsonData.length > 0) {
+        const latestData = jsonData[0];
+        setLampState(latestData.light_status ? "Ligada" : "Desligada");
+        setTemperature(parseInt(latestData.temperature));
+        setHumidity(parseInt(latestData.humidity));
+        setFanSpeed(parseInt(latestData.fan_speed));
 
-      if (temperature >= 0 && temperature <= 50 &&
-        humidity >= 0 && humidity <= 100 &&
-        fanSpeed >= 0 && fanSpeed <= 100
-      ) {
-        setStatus("Normal");
-      } else {
-        setStatus("Incomum");
+        
+        if (
+          latestData.temperature >= 0 &&
+          latestData.temperature <= 50 &&
+          latestData.humidity >= 0 &&
+          latestData.humidity <= 100 &&
+          latestData.fan_speed >= 0 &&
+          latestData.fan_speed <= 100
+        ) {
+          setStatus("Normal");
+        } else {
+          setStatus("Incomum");
+        }
       }
-    };
 
-    eventSource.onerror = (error) => {
-      console.error("Erro no EventSource:", error);
-      eventSource.close();
-    };
+      setChartData(transformedData); 
+    } catch (error) {
+      console.error("Erro ao buscar dados do gráfico:", error);
+    }
+  };
 
-    // Cleanup
-    return () => {
-      eventSource.close();
-    };
-  }, );
+  
+  useEffect(() => {
+    fetchChartData();
+  }, []);
 
   return (
     <>
@@ -75,8 +75,8 @@ const Dashboard = () => {
         <div className="container4">
           <div className="dashboardBar">
             <ResponsiveContainer width="80%" height={450}>
-              <BarChart
-                data={data}
+              <LineChart
+                data={chartData} 
                 margin={{
                   top: 5,
                   right: 30,
@@ -86,14 +86,15 @@ const Dashboard = () => {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
-                  dataKey="name"
-                  label={{ value: "Horas", position: "insideBottom", dy: 9 }}
+                  dataKey="timestamp"
+                  label={{ value: "Horário", position: "insideBottom", dy: 9 }}
+                  tick={{ fontSize: 12 }}
                 />
                 <YAxis
                   domain={[0, 100]}
                   tickCount={5}
                   label={{
-                    value: "Temperatura (°C)",
+                    value: "Valores",
                     angle: -90,
                     position: "insideLeft",
                     dy: -10,
@@ -102,12 +103,13 @@ const Dashboard = () => {
                 />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="Umidade" fill="#2196F3" />
-                <Bar dataKey="Temperatura" fill="#F44336" />
-              </BarChart>
+                <Line type="monotone" dataKey="Umidade" stroke="#2196F3" />
+                <Line type="monotone" dataKey="Temperatura" stroke="#F44336" />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
+
         <div className="home-overview">
           <div className="current-conditions">
             <h2>Condições Atuais</h2>
